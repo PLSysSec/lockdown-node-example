@@ -1,0 +1,9 @@
+{
+  "name": "lockdown-example",
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "is-even": "^1.0.0",
+    "is-number": "^6.0.0",
+    "minimist": "^1.2.0"
+  }
+}
