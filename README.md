@@ -8,13 +8,7 @@ that are common with server-side scripting languages.
 # Lockdown Node.js example
 
 This is a simple example to demonstrate how to work with a Lockdown enabled node. This code simply takes
-command line arguments and outputs even, odd, or NaN for each input. Example:
-
-```console
-$ node index.js a 1
-The input a is NaN
-The input 1 is odd
-```
+command line arguments and outputs even, odd, or NaN for each input.
 
 Our example depends on 4 popular npm packages in total which we need to obtain hashes for. Some packages
 are dynamically required depending on the input. The code needs at least a single input to
@@ -71,5 +65,37 @@ Lockdown :: internal/encoding.js :: 00e06e0efdeac644d8278dfe67195766e6b19928cc7f
 - Our example has a total of 35 .js files (index.js and 34 in `node_modules`) but Webpack found
   only 19 .js files that our code needs and generated hashes for them
 
+## Running the code with Lockdown
+
+- There are two ways to run node and specify the file that contains the hashes which enables Lockdown hash checking.
+  We can either use the flag `--lockdown-hashfile=` or the environment variable `LOCKDOWN_HASHFILE` as shown below:
+
+```console
+$ node --lockdown-hashfile=./hashlock index.js a 1
+The input a is NaN
+The input 1 is odd
+$ LOCKDOWN_HASHFILE=./hashlock node index.js a 1
+The input a is NaN
+The input 1 is odd
+```
+
 ## Integrity violation
-- TODO(ak): example of modifying a file violation
+
+- When one of the files that our code depends on changes (e.g. an attacker injects malicious code), node is able
+  to detect that and crash
+
+- Below is an example of a hash violation detected by node for one of the files in our `node_modules`:
+
+```console
+$ node --lockdown-hashfile=./hashlock index.js a 1
+The input a is NaN
+Lockdown :: hash not found for file: ./node_modules/is-odd/index.js
+node[31105]: ../src/node_contextify.cc:649:static void node::contextify::ContextifyScript::New(const v8::FunctionCallbackInfo<v8::Value>&): Assertion `false' failed.
+ 1: 0x8b93f0 node::Abort() [node]
+ 2: 0x8b94df  [node]
+ 3: 0x8ec598 node::contextify::ContextifyScript::New(v8::FunctionCallbackInfo<v8::Value> const&) [node]
+ 4: 0xb3db6f  [node]
+ 5: 0xb3fb72 v8::internal::Builtin_HandleApiCall(int, v8::internal::Object**, v8::internal::Isolate*) [node]
+ 6: 0x30c0cfe041bd
+Aborted (core dumped)
+```
