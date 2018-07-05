@@ -2,12 +2,12 @@
 
 Lockdown is an extension to server-side runtimes that maintains the integrity of web applications. With Lockdown,
 the runtime checks the hash of each file before executing it against a list of hashes generated before the
-application is deployed on a production server. This integrity check prevents Remote Code Execution vulnerabilities
+application is deployed to a production server. This integrity check prevents Remote Code Execution vulnerabilities
 that are common with server-side scripting languages.
 
 # Lockdown Node.js example
 
-This is a simple example to demonstrate how to work with a Lockdown enabled node. This code simply takes
+This is a simple example to demonstrate how to work with a Lockdown-enabled node. This code simply takes
 command line arguments and outputs even, odd, or NaN for each input.
 
 Our example depends on 4 popular npm packages in total which we need to obtain hashes for. Some packages
@@ -31,7 +31,7 @@ dynamically required dependencies in these modules. This approach, however, is s
 hashes for the internal node modules such as `fs` or `process`.
 
 Another approach we will explain for this example is to use Webpack with our own custom loader to only
-generate the hashes for the files our code depends on without any extra code. We will combine this
+generate the hashes for the files our code depends on without any extra files. We will combine this
 approach with the previous approach to get both the internal hashes as well as our code hashes.
 
 ## Hash generation
@@ -39,7 +39,7 @@ approach with the previous approach to get both the internal hashes as well as o
 ### Internal node modules
 
 - We run node in the hash generation mode with the flag `--lockdown-gen-hashes` and require all
-  the node internal modules (we use `require('module').builtinModules`)
+  the node internal modules.
 
 ```console
 $ node --lockdown-gen-hashes modules.js
