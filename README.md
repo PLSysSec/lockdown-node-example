@@ -5,41 +5,54 @@ the runtime checks the hash of each file before executing it against a list of h
 application is deployed to a production server. This integrity check prevents Remote Code Execution vulnerabilities
 that are common with server-side scripting languages.
 
+# Lockdown + Node.js
+
+We have implemented Lockdown for Node.js by adding the hash checking at the module level before compiling the
+code, and verifying that it matches one of the hashes that the user provides to node in a hash file. The hash file
+can be specified by using either the flag `--lockdown-hashfile=` or the environment variable `LOCKDOWN_HASHFILE`.
+Using either of the two methods enables Lockdown hash checking by default. The hash file must contain a list of SHA256
+hashes of any code that will be executed by node (taking into account the special function wrapper that node
+automatically adds to every module).
+
+We additionally provide a special hash generation mode that can be enabled with the flag `--lockdown-gen-hashes`
+which outputs the hashes without enforcing the hash checking. We use this flag to generate the hashes for the
+core node modules which we explain in the hash generation section.
+
 # Lockdown Node.js example
 
-This is a simple example to demonstrate how to work with a Lockdown-enabled node. This code simply takes
-command line arguments and outputs even, odd, or NaN for each input.
-
-Our example depends on 4 popular npm packages in total which we need to obtain hashes for. Some packages
-are dynamically required depending on the input. The code needs at least a single input to
-require `is-number`, and the code would require `is-even` only if one of the inputs is indeed a number.
-
-This means that simply running the code in the special hash generation mode is not enough to get all
-the hashes of all the .js files the code depends on.
+This repository contains a simple example to demonstrate how to work with a Lockdown-enabled node. The code
+simply takes command line arguments and outputs even, odd, or NaN for each input. Our example depends on 4
+popular npm packages in total which we need to generate hashes for. Some packages are dynamically required
+(also referred to as lazy loading) depending on the input. The code needs at least a single input to require
+`is-number`, and only if one of the inputs is indeed a number we require `is-even`.
 
 Even though our example only depends on 4 packages, our `node_modules` directory already has 14 different
-modules and a total of 34 .js files. Some npm packages come with their test files (e.g. minimist)
-which we do not want to include in our TCB.
+modules and a total of 34 .js files. Some npm packages come with their test files (e.g. minimist) which
+we do not want to include in our TCB. We discuss in the next section some hash generation approaches
+and explain what we used for this example.
+
+## Hash generation
 
 Generating hashes for all the files that an application depends on while keeping the TCB as small as possible is
 challenging and there are different approaches each with their own shortcomings.
 
 One approach, for example, is to write a script that requires each and every .js file our example depends
-on and run it in the hash generation mode but this is very challenging as the number of files grows very
-quickly with more dependencies. Additionally, if we simply require the modules themselves we could miss
-dynamically required dependencies in these modules. This approach, however, is suitable for generating
-hashes for the internal node modules such as `fs` or `process`.
+on and run it in the hash generation mode but this is very challenging as the number of files grows rapidly
+with more dependencies. Additionally, if we simply require the modules themselves we could miss dynamically
+required dependencies in these modules. This approach, however, is suitable for generating hashes for
+the internal node modules such as `fs`.
 
-Another approach we will explain for this example is to use Webpack with our own custom loader to only
-generate the hashes for the files our code depends on without any extra files. We will combine this
-approach with the previous approach to get both the internal hashes as well as our code hashes.
-
-## Hash generation
+Another approach which we use for this example is using Webpack with our own custom loader to only
+generate the hashes for the files our code depends on without any extra files. Webpack take an entry
+file and uses static analysis to find all the dependencies recursively. We will combine this approach
+with the previous approach to get both the internal hashes as well as our code hashes. There are
+some challenges when dealing with dependencies in the form of expressions that cannot be resolved
+statically which we discuss in a separate document.
 
 ### Internal node modules
 
-- We run node in the hash generation mode with the flag `--lockdown-gen-hashes` and require all
-  the node internal modules.
+- We run node in the hash generation mode using the flag `--lockdown-gen-hashes` and require all
+  the node internal modules:
 
 ```console
 $ node --lockdown-gen-hashes modules.js
@@ -52,23 +65,23 @@ Lockdown :: internal/encoding.js :: 00e06e0efdeac644d8278dfe67195766e6b19928cc7f
   ```
 
 - These modules do not change often so we only need to generate their hashes once. In fact, these hashes
-  could be made available publicly online or bundled with node itself.
+  could be made available publicly online or bundled together with node
 
 ### Application and node_modules (Webpack)
 
 - We rely on Webpack to resolve all the dependencies and use a custom loader that generates hashes for each
-  dependency. A simple Webpack config file for this example code is provided in the repository
-
-- We combine the hashes generated by Webpack with the hashes for the internal node modules in one file and
-  run node with this file
+  dependency. A simple Webpack configuration file for this example code is provided in this repository
 
 - Our example has a total of 35 .js files (index.js and 34 in `node_modules`) but Webpack found
   only 19 .js files that our code needs and generated hashes for them
 
+- We combine the hashes generated by Webpack with the hashes for the internal node modules in one file and
+  run node with this file
+
 ## Running the code with Lockdown
 
-- There are two ways to run node and specify the file that contains the hashes which enables Lockdown hash checking.
-  We can either use the flag `--lockdown-hashfile=` or the environment variable `LOCKDOWN_HASHFILE` as shown below:
+- We can either use the flag `--lockdown-hashfile=` or the environment variable `LOCKDOWN_HASHFILE` to provide
+  the hash file as shown below:
 
 ```console
 $ node --lockdown-hashfile=./hashlock index.js a 1
