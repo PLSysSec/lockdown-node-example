@@ -4,7 +4,7 @@ module.exports = {
   entry: './index.js',
   module: {
     rules: [
-      { test: /\.js$/, use: ['/path/to/hashlock-loader.js'] },
+      { test: /\.js$/, use: ['./hashlock-loader.js'] },
     ],
   }
 }

@@ -2,8 +2,8 @@
 
 Lockdown is an extension to server-side runtimes that maintains the integrity of web applications. With Lockdown,
 the runtime checks the hash of each file before executing it against a list of hashes generated before the
-application is deployed to a production server. This integrity check prevents Remote Code Execution vulnerabilities
-that are common with server-side scripting languages.
+application is deployed to a production server. This integrity check prevents Remote Code Execution from File Upload
+vulnerabilities that are common with server-side scripting languages.
 
 # Lockdown + Node.js
 
